@@ -1,0 +1,1311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Flowvity — Focus. Flow. Grow.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+/* ─── RESET & BASE ─── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#080C12;overscroll-behavior:none}
+body{font-family:'Plus Jakarta Sans',sans-serif;color:#E2EAF2;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+button{cursor:pointer;border:none;background:none;color:inherit;font-family:inherit}
+input,select,textarea{font-family:inherit;color:#E2EAF2;outline:none}
+input[type=text],input[type=number],input[type=password]{
+  background:rgba(255,255,255,0.05);
+  border:1.5px solid rgba(255,255,255,0.09);
+  border-radius:12px;padding:11px 14px;font-size:14px;
+  width:100%;transition:border-color 0.2s;
+}
+input[type=text]:focus,input[type=number]:focus,input[type=password]:focus{
+  border-color:#14F0A0;
+  box-shadow:0 0 0 3px rgba(20,240,160,0.12);
+}
+select{
+  background:rgba(255,255,255,0.05);
+  border:1.5px solid rgba(255,255,255,0.09);
+  border-radius:12px;padding:11px 14px;font-size:14px;
+  width:100%;-webkit-appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2364748B' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 14px center;
+  padding-right:40px;transition:border-color 0.2s;
+}
+select:focus{border-color:#14F0A0}
+::-webkit-scrollbar{width:0}
+::-webkit-inner-spin-button,::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+input[type=number]{-moz-appearance:textfield}
+
+/* ─── ANIMATIONS ─── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.15)}100%{transform:scale(1)}}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.03);opacity:0.9}}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+@keyframes shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(200%)}}
+@keyframes glow{0%,100%{box-shadow:0 0 0 0 rgba(20,240,160,0)}50%{box-shadow:0 0 20px 4px rgba(20,240,160,0.2)}}
+
+.fade-up{animation:fadeUp 0.35s ease forwards}
+.pop{animation:pop 0.3s ease}
+.pulse{animation:pulse 3s ease-in-out infinite}
+.breathe{animation:breathe 5s ease-in-out infinite}
+.glow{animation:glow 3s ease-in-out infinite}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect,useRef,useCallback}=React;
+
+/* ╔═══════════════════════════════════════╗
+   ║  DESIGN TOKENS                        ║
+   ╚═══════════════════════════════════════╝ */
+const C={
+  bg:'#080C12',
+  sur:'#0F1520',
+  card:'#131B26',
+  cardHov:'#192030',
+  bdr:'rgba(255,255,255,0.07)',
+  bdrHov:'rgba(255,255,255,0.13)',
+  mint:'#14F0A0',     mintD:'rgba(20,240,160,0.1)',    mintDD:'rgba(20,240,160,0.05)',
+  amber:'#FBBF24',    amberD:'rgba(251,191,36,0.1)',
+  blue:'#60A5FA',     blueD:'rgba(96,165,250,0.1)',
+  pink:'#F472B6',     pinkD:'rgba(244,114,182,0.1)',
+  purple:'#A78BFA',   purpleD:'rgba(167,139,250,0.1)',
+  red:'#F87171',      redD:'rgba(248,113,113,0.1)',
+  txt:'#E2EAF2',
+  sub:'#94A3B8',
+  mut:'#485569',
+};
+
+/* ╔═══════════════════════════════════════╗
+   ║  CONSTANTS                            ║
+   ╚═══════════════════════════════════════╝ */
+const CATS={
+  study:   {label:'Study',    emoji:'📚', color:C.blue,   dim:C.blueD},
+  health:  {label:'Health',   emoji:'🏃', color:C.mint,   dim:C.mintD},
+  creative:{label:'Creative', emoji:'✨', color:C.pink,   dim:C.pinkD},
+  personal:{label:'Personal', emoji:'🌱', color:C.purple, dim:C.purpleD},
+  work:    {label:'Work',     emoji:'💼', color:C.amber,  dim:C.amberD},
+};
+
+const OFF_DEVICE=[
+  {emoji:'🚶',text:'Take a 10-minute walk outside',tag:'Movement'},
+  {emoji:'📖',text:'Read a physical book for 30 min',tag:'Reading'},
+  {emoji:'🧘',text:'5 minutes of deep breathing',tag:'Mindfulness'},
+  {emoji:'✏️',text:'Journal your thoughts on paper',tag:'Reflection'},
+  {emoji:'💪',text:'Do 15 minutes of stretching',tag:'Movement'},
+  {emoji:'🍳',text:'Cook something healthy & new',tag:'Life Skills'},
+  {emoji:'📞',text:'Call a friend or family member',tag:'Social'},
+  {emoji:'🎨',text:'Draw or sketch freely',tag:'Creative'},
+  {emoji:'🌳',text:'Spend 15 min in nature',tag:'Wellbeing'},
+  {emoji:'♟️',text:'Play a board or card game',tag:'Play'},
+];
+
+const BADGES=[
+  {id:'first_task',  emoji:'⚡', name:'First Step',    desc:'Complete your first task',        pts:10},
+  {id:'focus_1',     emoji:'🎯', name:'Focused',        desc:'Complete a Pomodoro session',     pts:25},
+  {id:'habit_3',     emoji:'🔥', name:'Consistent',     desc:'3-day habit streak',              pts:40},
+  {id:'tasks_5',     emoji:'💫', name:'Momentum',       desc:'5 tasks in one day',              pts:60},
+  {id:'focus_5',     emoji:'🧠', name:'Deep Work',      desc:'5 total Pomodoro sessions',       pts:75},
+  {id:'habit_7',     emoji:'🏆', name:'Week Strong',    desc:'7-day habit streak',              pts:100},
+  {id:'off_device',  emoji:'📵', name:'Unplugged',      desc:'Log an off-device activity',      pts:20},
+];
+
+const LEVELS=[
+  {min:0,   name:'Starter',       color:C.sub},
+  {min:50,  name:'Builder',       color:C.blue},
+  {min:150, name:'Focused',       color:C.mint},
+  {min:300, name:'Consistent',    color:C.amber},
+  {min:500, name:'High Achiever', color:C.pink},
+  {min:800, name:'Flow Master',   color:C.purple},
+];
+
+/* ╔═══════════════════════════════════════╗
+   ║  UTILITY FUNCTIONS                    ║
+   ╚═══════════════════════════════════════╝ */
+const todayStr=()=>new Date().toISOString().split('T')[0];
+const uid=()=>Math.random().toString(36).slice(2,9);
+const fmtTimer=s=>`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+const getLevel=pts=>[...LEVELS].reverse().find(l=>pts>=l.min)||LEVELS[0];
+const getNextLevel=pts=>{const i=LEVELS.findIndex(l=>l===getLevel(pts));return LEVELS[i+1]||null};
+
+const getWeekDates=()=>{
+  const d=new Date();const dow=d.getDay()||7;
+  return Array.from({length:7},(_,i)=>{
+    const dt=new Date(d);dt.setDate(d.getDate()-dow+1+i);
+    return dt.toISOString().split('T')[0];
+  });
+};
+
+const calcStreak=dates=>{
+  if(!dates||!dates.length)return 0;
+  const sorted=[...new Set(dates)].sort().reverse();
+  let streak=0,cur=new Date(todayStr());
+  for(const d of sorted){
+    const diff=(cur-new Date(d))/(86400000);
+    if(diff<=1&&diff>=0){streak++;cur=new Date(d);cur.setDate(cur.getDate()-1);}
+    else break;
+  }
+  return streak;
+};
+
+/* ╔═══════════════════════════════════════╗
+   ║  HOOKS                                ║
+   ╚═══════════════════════════════════════╝ */
+function useLS(key,def){
+  const [v,setV]=useState(()=>{
+    try{const s=localStorage.getItem(key);return s?JSON.parse(s):def;}
+    catch{return def;}
+  });
+  const set=useCallback(val=>{
+    setV(prev=>{
+      const next=typeof val==='function'?val(prev):val;
+      try{localStorage.setItem(key,JSON.stringify(next));}catch{}
+      return next;
+    });
+  },[key]);
+  return[v,set];
+}
+
+/* ╔═══════════════════════════════════════╗
+   ║  SHARED COMPONENTS                    ║
+   ╚═══════════════════════════════════════╝ */
+function Toast({msg,onDone}){
+  useEffect(()=>{const t=setTimeout(onDone,2800);return()=>clearTimeout(t)},[]);
+  return(
+    <div style={{
+      position:'fixed',top:20,left:'50%',transform:'translateX(-50%)',
+      background:C.mint,color:'#060A10',padding:'10px 20px',borderRadius:100,
+      fontSize:13,fontWeight:700,zIndex:9999,
+      boxShadow:'0 4px 32px rgba(20,240,160,0.4)',
+      animation:'fadeUp 0.25s ease',whiteSpace:'nowrap',
+      maxWidth:'90vw',textAlign:'center',
+    }}>
+      {msg}
+    </div>
+  );
+}
+
+function Pill({text,color,bg,style={}}){
+  return(
+    <span style={{
+      fontSize:11,fontWeight:700,color:color||C.mint,
+      background:bg||C.mintD,borderRadius:20,
+      padding:'3px 10px',letterSpacing:'0.03em',...style
+    }}>{text}</span>
+  );
+}
+
+/* ╔═══════════════════════════════════════╗
+   ║  SVG ICONS                            ║
+   ╚═══════════════════════════════════════╝ */
+const I={
+  Home:({s=20,a})=><svg width={s} height={s} viewBox="0 0 24 24" fill={a?'currentColor':'none'} stroke="currentColor" strokeWidth={a?0:2} strokeLinecap="round" strokeLinejoin="round"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H5a1 1 0 01-1-1V9.5z"/>{a?<rect x="9" y="13" width="6" height="8" rx="1" fill="#080C12"/>:<polyline points="9 21 9 13 15 13 15 21"/>}</svg>,
+  Tasks:({s=20,a})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">{a?<><rect x="3" y="3" width="18" height="18" rx="3" fill="currentColor"/><path d="M8 12l3 3 5-5" stroke="#080C12" strokeWidth="2.2"/></>:<><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 12l3 3 5-5"/></>}</svg>,
+  Focus:({s=20,a})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4" fill={a?'currentColor':'none'} strokeWidth="0"/><circle cx="12" cy="12" r="4" stroke="currentColor"/></svg>,
+  Habits:({s=20,a})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill={a?'currentColor':'none'}/></svg>,
+  Stats:({s=20,a})=><svg width={s} height={s} viewBox="0 0 24 24" fill={a?'currentColor':'none'} stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="13" width="4" height="8" rx="1"/><rect x="10" y="8" width="4" height="13" rx="1"/><rect x="16" y="4" width="4" height="17" rx="1"/></svg>,
+};
+
+/* ╔═══════════════════════════════════════╗
+   ║  APP ROOT                             ║
+   ╚═══════════════════════════════════════╝ */
+function App(){
+  const [tab,setTab]=useState('home');
+  const [tasks,setTasks]   =useLS('fv_tasks',[]);
+  const [habits,setHabits] =useLS('fv_habits',defaultHabits());
+  const [sessions,setSessions]=useLS('fv_sessions',[]);
+  const [points,setPoints] =useLS('fv_points',0);
+  const [badges,setBadges] =useLS('fv_badges',[]);
+  const [offLog,setOffLog] =useLS('fv_offlog',[]);
+  const [toast,setToast]   =useState(null);
+  const toastQueue=useRef([]);
+
+  const showToast=useCallback(msg=>{
+    toastQueue.current.push(msg);
+    if(!toast)setToast(toastQueue.current.shift());
+  },[toast]);
+
+  const nextToast=useCallback(()=>{
+    if(toastQueue.current.length>0)setToast(toastQueue.current.shift());
+    else setToast(null);
+  },[]);
+
+  const addPts=useCallback((p,reason)=>{
+    setPoints(x=>x+p);
+    showToast(`+${p} pts — ${reason}`);
+  },[showToast]);
+
+  const awardBadge=useCallback((id)=>{
+    setBadges(prev=>{
+      if(prev.includes(id))return prev;
+      const bg=BADGES.find(b=>b.id===id);
+      if(bg){
+        setTimeout(()=>showToast(`🏅 Badge unlocked: ${bg.name}!`),600);
+        setPoints(x=>x+bg.pts);
+      }
+      return[...prev,id];
+    });
+  },[showToast]);
+
+  const shared={tasks,setTasks,habits,setHabits,sessions,setSessions,
+    points,badges,offLog,setOffLog,addPts,awardBadge,showToast};
+
+  const TABS=[
+    {id:'home',   label:'Home',   Icon:I.Home},
+    {id:'tasks',  label:'Tasks',  Icon:I.Tasks},
+    {id:'focus',  label:'Focus',  Icon:I.Focus},
+    {id:'habits', label:'Habits', Icon:I.Habits},
+    {id:'stats',  label:'Stats',  Icon:I.Stats},
+  ];
+
+  return(
+    <div style={{display:'flex',justifyContent:'center',minHeight:'100vh',background:C.bg}}>
+      {toast&&<Toast msg={toast} onDone={nextToast}/>}
+      <div style={{width:'100%',maxWidth:430,minHeight:'100vh',background:C.bg,position:'relative',display:'flex',flexDirection:'column'}}>
+        <div style={{flex:1,overflowY:'auto',paddingBottom:88}}>
+          {tab==='home'   &&<HomeScreen   {...shared} setTab={setTab}/>}
+          {tab==='tasks'  &&<TasksScreen  {...shared}/>}
+          {tab==='focus'  &&<FocusScreen  {...shared}/>}
+          {tab==='habits' &&<HabitsScreen {...shared}/>}
+          {tab==='stats'  &&<StatsScreen  {...shared}/>}
+        </div>
+
+        {/* Bottom Navigation */}
+        <nav style={{
+          position:'fixed',bottom:0,left:'50%',transform:'translateX(-50%)',
+          width:'100%',maxWidth:430,
+          background:'rgba(8,12,18,0.96)',backdropFilter:'blur(24px)',
+          borderTop:`1px solid ${C.bdr}`,
+          display:'flex',justifyContent:'space-around',
+          padding:'10px 0 20px',zIndex:100,
+        }}>
+          {TABS.map(({id,label,Icon})=>{
+            const a=tab===id;
+            return(
+              <button key={id} onClick={()=>setTab(id)} style={{
+                display:'flex',flexDirection:'column',alignItems:'center',gap:3,
+                padding:'6px 16px',borderRadius:14,minWidth:64,
+                background:a?C.mintD:'transparent',
+                color:a?C.mint:C.mut,
+                transition:'all 0.2s',
+              }}>
+                <Icon s={20} a={a}/>
+                <span style={{fontSize:10,fontWeight:a?700:400,letterSpacing:'0.02em'}}>{label}</span>
+              </button>
+            );
+          })}
+        </nav>
+      </div>
+    </div>
+  );
+}
+
+function defaultHabits(){
+  return[
+    {id:uid(),title:'Morning movement',emoji:'🏃',category:'health',completedDates:[],createdAt:todayStr()},
+    {id:uid(),title:'Read for 20 min',emoji:'📖',category:'personal',completedDates:[],createdAt:todayStr()},
+    {id:uid(),title:'Phone-free first hour',emoji:'📵',category:'personal',completedDates:[],createdAt:todayStr()},
+  ];
+}
+
+/* ╔═══════════════════════════════════════╗
+   ║  HOME SCREEN                          ║
+   ╚═══════════════════════════════════════╝ */
+function HomeScreen({tasks,habits,sessions,points,badges,offLog,setOffLog,addPts,awardBadge,showToast,setTab}){
+  const today=todayStr();
+  const todayTasks=tasks.filter(t=>t.date===today);
+  const done=todayTasks.filter(t=>t.completed).length;
+  const total=todayTasks.length;
+  const prog=total>0?done/total:0;
+  const R=43,circ=2*Math.PI*R,dashOffset=circ*(1-prog);
+  const todayFocusMins=sessions.filter(s=>s.date===today&&s.type==='work'&&s.completed)
+    .reduce((sum,s)=>sum+s.duration,0);
+  const todayHabitsDone=habits.filter(h=>h.completedDates.includes(today)).length;
+  const hour=new Date().getHours();
+  const greet=hour<12?'Good morning ☀️':hour<17?'Good afternoon ⚡':'Good evening 🌙';
+  const lvl=getLevel(points);
+  const nextLvl=getNextLevel(points);
+  const [suggestion]=useState(()=>OFF_DEVICE[Math.floor(Math.random()*OFF_DEVICE.length)]);
+
+  const logOffDevice=()=>{
+    const entry={id:uid(),activity:suggestion.text,emoji:suggestion.emoji,date:today};
+    setOffLog(l=>[entry,...l]);
+    addPts(15,'Off-device activity!');
+    awardBadge('off_device');
+  };
+
+  return(
+    <div style={{padding:'28px 20px 0'}}>
+
+      {/* Header */}
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:24}} className="fade-up">
+        <div>
+          <div style={{fontFamily:'Syne',fontWeight:800,fontSize:23,color:C.txt,lineHeight:1.2}}>{greet}</div>
+          <div style={{fontSize:12,color:C.mut,marginTop:4}}>
+            {new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})}
+          </div>
+        </div>
+        <div style={{textAlign:'right'}}>
+          <div style={{background:C.amberD,border:`1.5px solid rgba(251,191,36,0.25)`,
+            borderRadius:24,padding:'7px 14px',display:'flex',alignItems:'center',gap:7}}>
+            <span style={{fontSize:15}}>⚡</span>
+            <span style={{fontFamily:'Syne',fontSize:15,fontWeight:800,color:C.amber}}>{points}</span>
+          </div>
+          <div style={{fontSize:11,color:lvl.color,marginTop:4,fontWeight:700,letterSpacing:'0.03em'}}>{lvl.name}</div>
+        </div>
+      </div>
+
+      {/* Progress Ring Card */}
+      <div style={{
+        background:`linear-gradient(135deg,${C.card},${C.sur})`,
+        border:`1.5px solid ${C.bdr}`,borderRadius:22,
+        padding:20,marginBottom:14,display:'flex',alignItems:'center',gap:20,
+      }} className="fade-up">
+        <div style={{position:'relative',flexShrink:0}} className={prog>0?'breathe':''}>
+          <svg width={105} height={105} viewBox="0 0 105 105">
+            <circle cx={52} cy={52} r={R} fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth={9}/>
+            <circle cx={52} cy={52} r={R} fill="none"
+              stroke={prog>0?C.mint:'rgba(255,255,255,0.04)'}
+              strokeWidth={9} strokeLinecap="round"
+              strokeDasharray={circ} strokeDashoffset={dashOffset}
+              style={{transform:'rotate(-90deg)',transformOrigin:'center',transition:'stroke-dashoffset 0.8s cubic-bezier(0.4,0,0.2,1)'}}/>
+          </svg>
+          <div style={{position:'absolute',inset:0,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center'}}>
+            <span style={{fontFamily:'Syne',fontWeight:800,fontSize:22,color:C.txt,lineHeight:1}}>{done}</span>
+            <span style={{fontSize:10,color:C.mut,marginTop:2}}>of {total}</span>
+          </div>
+        </div>
+        <div style={{flex:1}}>
+          <div style={{fontSize:14,fontWeight:700,color:C.txt,marginBottom:14}}>
+            Today's Progress
+            <span style={{
+              fontSize:11,fontWeight:700,color:prog===1?C.mint:C.sub,
+              background:prog===1?C.mintD:'rgba(255,255,255,0.06)',
+              borderRadius:10,padding:'2px 8px',marginLeft:8,
+            }}>{Math.round(prog*100)}%</span>
+          </div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+            <MiniStat icon="⏱" value={`${Math.floor(todayFocusMins/60)}h ${todayFocusMins%60}m`} label="Focus" color={C.blue}/>
+            <MiniStat icon="🔥" value={`${todayHabitsDone}/${habits.length}`} label="Habits" color={C.amber}/>
+            <MiniStat icon="🏅" value={badges.length} label="Badges" color={C.purple}/>
+            <MiniStat icon="🌿" value={offLog.filter(l=>l.date===today).length} label="Offline" color={C.mint}/>
+          </div>
+        </div>
+      </div>
+
+      {/* Today's Tasks */}
+      {total>0&&(
+        <div style={{background:C.card,border:`1.5px solid ${C.bdr}`,borderRadius:18,padding:16,marginBottom:14}} className="fade-up">
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
+            <span style={{fontSize:11,fontWeight:700,color:C.sub,textTransform:'uppercase',letterSpacing:'0.07em'}}>Today's Tasks</span>
+            <button onClick={()=>setTab('tasks')} style={{fontSize:12,color:C.mint,fontWeight:600}}>View all →</button>
+          </div>
+          {todayTasks.slice(0,3).map(t=>{
+            const cat=CATS[t.category];
+            return(
+              <div key={t.id} style={{
+                display:'flex',alignItems:'center',gap:10,padding:'7px 0',
+                borderBottom:`1px solid ${C.bdr}`,opacity:t.completed?0.45:1,
+              }}>
+                <div style={{
+                  width:18,height:18,borderRadius:6,flexShrink:0,
+                  border:`2px solid ${t.completed?cat.color:C.bdr}`,
+                  background:t.completed?cat.color:'transparent',
+                  display:'flex',alignItems:'center',justifyContent:'center',
+                }}>
+                  {t.completed&&<span style={{color:'#060A10',fontSize:10,fontWeight:800}}>✓</span>}
+                </div>
+                <span style={{flex:1,fontSize:13,color:C.txt,textDecoration:t.completed?'line-through':'none',
+                  whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{t.title}</span>
+                <span style={{fontSize:13}}>{cat?.emoji}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Off-Device Suggestion */}
+      <div style={{
+        background:`linear-gradient(135deg,${C.mintDD},rgba(20,240,160,0.02))`,
+        border:`1.5px solid rgba(20,240,160,0.18)`,borderRadius:18,
+        padding:18,marginBottom:14,
+      }} className="fade-up">
+        <div style={{fontSize:10,fontWeight:800,color:C.mint,letterSpacing:'0.1em',marginBottom:10}}>
+          📵  OFFLINE ACTIVITY SUGGESTION
+        </div>
+        <div style={{fontSize:16,fontWeight:600,color:C.txt,marginBottom:12}}>
+          {suggestion.emoji} {suggestion.text}
+        </div>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+          <Pill text={suggestion.tag} color={C.mint} bg={C.mintD}/>
+          <button onClick={logOffDevice}
+            style={{
+              fontSize:12,fontWeight:700,color:C.mint,
+              background:C.mintD,border:`1.5px solid rgba(20,240,160,0.3)`,
+              borderRadius:20,padding:'7px 16px',transition:'all 0.15s',
+            }}>
+            ✓ Done  +15 pts
+          </button>
+        </div>
+      </div>
+
+      {/* CTA */}
+      <button onClick={()=>setTab('focus')}
+        style={{
+          width:'100%',background:C.mint,color:'#060A10',
+          borderRadius:16,padding:'17px',
+          fontFamily:'Syne',fontSize:15,fontWeight:800,letterSpacing:'0.03em',
+          marginBottom:14,transition:'transform 0.15s, box-shadow 0.15s',
+        }}
+        onMouseDown={e=>e.target.style.transform='scale(0.97)'}
+        onMouseUp={e=>e.target.style.transform='scale(1)'}>
+        ▶ Start Focus Session
+      </button>
+
+      {/* Level progress bar */}
+      {nextLvl&&(
+        <div style={{padding:'14px 16px',background:C.card,borderRadius:16,border:`1.5px solid ${C.bdr}`,marginBottom:28}}>
+          <div style={{display:'flex',justifyContent:'space-between',marginBottom:7,fontSize:12}}>
+            <span style={{color:C.sub}}>Level up → <span style={{color:nextLvl.color,fontWeight:700}}>{nextLvl.name}</span></span>
+            <span style={{color:C.mut}}>{points} / {nextLvl.min} pts</span>
+          </div>
+          <div style={{background:'rgba(255,255,255,0.05)',borderRadius:6,height:5,overflow:'hidden'}}>
+            <div style={{
+              height:5,borderRadius:6,background:nextLvl.color,
+              width:`${Math.min(100,(points/nextLvl.min)*100)}%`,
+              transition:'width 0.6s cubic-bezier(0.4,0,0.2,1)',
+              position:'relative',overflow:'hidden',
+            }}>
+              <div style={{position:'absolute',inset:0,background:'linear-gradient(90deg,transparent,rgba(255,255,255,0.3),transparent)',animation:'shimmer 2s infinite'}}/>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MiniStat({icon,value,label,color}){
+  return(
+    <div style={{background:'rgba(255,255,255,0.04)',borderRadius:12,padding:'9px 11px'}}>
+      <div style={{fontFamily:'Syne',fontSize:14,fontWeight:800,color:color||C.txt}}>{icon} {value}</div>
+      <div style={{fontSize:10,color:C.mut,marginTop:2}}>{label}</div>
+    </div>
+  );
+}
+
+/* ╔═══════════════════════════════════════╗
+   ║  TASKS SCREEN                         ║
+   ╚═══════════════════════════════════════╝ */
+function TasksScreen({tasks,setTasks,addPts,awardBadge}){
+  const [form,setForm]=useState({title:'',category:'study',estimatedMins:'25'});
+  const [adding,setAdding]=useState(false);
+  const today=todayStr();
+
+  const submit=()=>{
+    if(!form.title.trim())return;
+    const t={
+      id:uid(),title:form.title.trim(),category:form.category,
+      estimatedMins:parseInt(form.estimatedMins)||25,
+      completed:false,date:today,pts:10,
+    };
+    setTasks(ts=>[...ts,t]);
+    setForm(f=>({...f,title:''}));
+    setAdding(false);
+  };
+
+  const toggle=id=>{
+    setTasks(ts=>ts.map(t=>{
+      if(t.id!==id)return t;
+      if(!t.completed){
+        addPts(t.pts||10,'Task completed!');
+        const nowDone=ts.filter(x=>x.date===today&&x.completed).length+1;
+        if(ts.filter(x=>x.date===today&&x.completed).length===0)awardBadge('first_task');
+        if(nowDone>=5)awardBadge('tasks_5');
+      }
+      return{...t,completed:!t.completed};
+    }));
+  };
+
+  const del=id=>setTasks(ts=>ts.filter(t=>t.id!==id));
+
+  const todayTasks=tasks.filter(t=>t.date===today);
+  const doneCount=todayTasks.filter(t=>t.completed).length;
+  const groups=Object.entries(CATS)
+    .map(([k,v])=>({key:k,cat:v,items:todayTasks.filter(t=>t.category===k)}))
+    .filter(g=>g.items.length>0);
+
+  return(
+    <div style={{padding:'28px 20px 0'}}>
+      {/* Header */}
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:22}}>
+        <div>
+          <h2 style={{fontFamily:'Syne',fontWeight:800,fontSize:22,color:C.txt}}>Today's Tasks</h2>
+          <div style={{fontSize:12,color:C.mut,marginTop:3}}>
+            {doneCount} done · {todayTasks.length-doneCount} remaining
+          </div>
+        </div>
+        <button onClick={()=>setAdding(!adding)} style={{
+          width:38,height:38,borderRadius:13,
+          background:adding?C.redD:C.mint,
+          color:adding?C.red:'#060A10',
+          fontSize:22,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',
+          border:adding?`1.5px solid ${C.red}40`:'none',transition:'all 0.2s',
+        }}>
+          {adding?'×':'+'}
+        </button>
+      </div>
+
+      {/* Add task form */}
+      {adding&&(
+        <div style={{background:C.card,border:`1.5px solid rgba(20,240,160,0.2)`,borderRadius:18,padding:16,marginBottom:20}} className="fade-up">
+          <input type="text" placeholder="What do you need to do?" value={form.title}
+            onChange={e=>setForm(f=>({...f,title:e.target.value}))}
+            onKeyDown={e=>{if(e.key==='Enter')submit();}}
+            autoFocus style={{marginBottom:10}}/>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:12}}>
+            <div>
+              <div style={{fontSize:11,color:C.mut,marginBottom:5,fontWeight:600}}>Category</div>
+              <select value={form.category} onChange={e=>setForm(f=>({...f,category:e.target.value}))}>
+                {Object.entries(CATS).map(([k,v])=>(
+                  <option key={k} value={k}>{v.emoji} {v.label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <div style={{fontSize:11,color:C.mut,marginBottom:5,fontWeight:600}}>Est. minutes</div>
+              <input type="number" value={form.estimatedMins} min="5" max="240"
+                onChange={e=>setForm(f=>({...f,estimatedMins:e.target.value}))}/>
+            </div>
+          </div>
+          <button onClick={submit} style={{
+            width:'100%',background:C.mint,color:'#060A10',
+            borderRadius:13,padding:'12px',fontSize:14,fontWeight:700,fontFamily:'Syne',
+          }}>
+            Add Task  (+10 pts)
+          </button>
+        </div>
+      )}
+
+      {/* Empty state */}
+      {todayTasks.length===0&&(
+        <div style={{textAlign:'center',padding:'60px 20px',color:C.mut}} className="fade-up">
+          <div style={{fontSize:48,marginBottom:14}}>📋</div>
+          <div style={{fontSize:16,fontWeight:700,color:C.sub,marginBottom:8}}>No tasks yet</div>
+          <div style={{fontSize:13,lineHeight:1.7}}>Tap + to add your first task<br/>and start building momentum</div>
+        </div>
+      )}
+
+      {/* Task groups */}
+      {groups.map(({key,cat,items})=>(
+        <div key={key} style={{marginBottom:22}} className="fade-up">
+          <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:10}}>
+            <span style={{fontSize:15}}>{cat.emoji}</span>
+            <span style={{fontSize:11,fontWeight:800,color:cat.color,textTransform:'uppercase',letterSpacing:'0.07em'}}>{cat.label}</span>
+            <span style={{fontSize:11,color:C.mut,marginLeft:'auto'}}>{items.filter(t=>t.completed).length}/{items.length}</span>
+          </div>
+          {items.map(task=>(
+            <TaskItem key={task.id} task={task} cat={cat} onToggle={toggle} onDel={del}/>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function TaskItem({task,cat,onToggle,onDel}){
+  const [pressed,setPressed]=useState(false);
+  return(
+    <div style={{
+      background:task.completed?'rgba(255,255,255,0.02)':C.card,
+      border:`1.5px solid ${task.completed?C.bdr:C.bdr}`,
+      borderLeft:`3px solid ${task.completed?cat.color+'40':cat.color}`,
+      borderRadius:14,padding:'13px 14px',marginBottom:8,
+      display:'flex',alignItems:'center',gap:12,
+      opacity:task.completed?0.5:1,transition:'all 0.25s',
+    }} className="fade-up">
+      <button onClick={()=>{setPressed(true);setTimeout(()=>setPressed(false),300);onToggle(task.id);}}
+        style={{
+          width:24,height:24,borderRadius:8,flexShrink:0,
+          border:`2px solid ${task.completed?cat.color:C.bdr}`,
+          background:task.completed?cat.color:'transparent',
+          display:'flex',alignItems:'center',justifyContent:'center',
+          transition:'all 0.2s',transform:pressed?'scale(1.2)':'scale(1)',
+        }}>
+        {task.completed&&<span style={{color:'#060A10',fontSize:12,fontWeight:900}}>✓</span>}
+      </button>
+      <div style={{flex:1,minWidth:0}}>
+        <div style={{
+          fontSize:14,fontWeight:500,color:C.txt,
+          textDecoration:task.completed?'line-through':'none',
+          whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',
+        }}>{task.title}</div>
+        <div style={{fontSize:11,color:C.mut,marginTop:2}}>{task.estimatedMins} min</div>
+      </div>
+      <Pill text={`+${task.pts||10}`} color={cat.color} bg={cat.dim}/>
+      <button onClick={()=>onDel(task.id)} style={{color:C.mut,fontSize:18,padding:'2px 4px',lineHeight:1}}>×</button>
+    </div>
+  );
+}
+
+/* ╔═══════════════════════════════════════╗
+   ║  FOCUS SCREEN  (Pomodoro Timer)       ║
+   ╚═══════════════════════════════════════╝ */
+function FocusScreen({tasks,sessions,setSessions,addPts,awardBadge,showToast}){
+  const [workMins,setWorkMins]=useState(25);
+  const [breakMins,setBreakMins]=useState(5);
+  const [phase,setPhase]=useState('work');
+  const [timeLeft,setTimeLeft]=useState(25*60);
+  const [running,setRunning]=useState(false);
+  const [sessionsDone,setSessionsDone]=useState(0);
+  const [selected,setSelected]=useState('');
+  const today=todayStr();
+  const todayTasks=tasks.filter(t=>t.date===today&&!t.completed);
+  const todaySessions=sessions.filter(s=>s.date===today&&s.type==='work'&&s.completed);
+  const todayMins=todaySessions.reduce((s,x)=>s+x.duration,0);
+
+  /* ── Timer countdown ── */
+  useEffect(()=>{
+    if(!running)return;
+    const id=setInterval(()=>setTimeLeft(t=>Math.max(0,t-1)),1000);
+    return()=>clearInterval(id);
+  },[running]);
+
+  /* ── Phase transition when timer hits zero ── */
+  useEffect(()=>{
+    if(timeLeft>0||!running)return;
+    setRunning(false);
+    if(phase==='work'){
+      const sc=sessionsDone+1;
+      setSessionsDone(sc);
+      const s={id:uid(),duration:workMins,type:'work',taskId:selected,date:today,completed:true};
+      setSessions(ss=>[...ss,s]);
+      addPts(30,'Focus session complete!');
+      if(sc===1)awardBadge('focus_1');
+      const total=sessions.filter(x=>x.type==='work'&&x.completed).length+1;
+      if(total>=5)awardBadge('focus_5');
+      setPhase('break');
+      setTimeLeft(breakMins*60);
+      showToast('🎉 Session done! Take a break.');
+    }else{
+      setPhase('work');
+      setTimeLeft(workMins*60);
+      showToast('⚡ Break over — ready to focus!');
+    }
+  },[timeLeft,running]);
+
+  const toggle=()=>{if(timeLeft===0){reset();return;}setRunning(r=>!r);};
+  const reset=()=>{setRunning(false);setPhase('work');setTimeLeft(workMins*60);};
+
+  const total=phase==='work'?workMins*60:breakMins*60;
+  const prog=1-(timeLeft/total);
+  const R=82;const circ=2*Math.PI*R;
+  const ringColor=phase==='break'?C.blue:C.mint;
+
+  return(
+    <div style={{padding:'28px 20px 0'}}>
+      {/* Header */}
+      <div style={{marginBottom:22}}>
+        <h2 style={{fontFamily:'Syne',fontWeight:800,fontSize:22,color:C.txt}}>Focus Timer</h2>
+        <div style={{fontSize:12,color:C.mut,marginTop:3}}>
+          {todaySessions.length} sessions · {todayMins} min today
+        </div>
+      </div>
+
+      {/* Task selector */}
+      {todayTasks.length>0&&(
+        <select value={selected} onChange={e=>setSelected(e.target.value)} style={{marginBottom:18,fontSize:13}}>
+          <option value="">Select a task to work on (optional)</option>
+          {todayTasks.map(t=>(
+            <option key={t.id} value={t.id}>{CATS[t.category]?.emoji} {t.title}</option>
+          ))}
+        </select>
+      )}
+
+      {/* Phase tabs */}
+      <div style={{display:'flex',gap:8,marginBottom:28}}>
+        {[
+          {id:'work',  label:'🎯 Focus',  mins:workMins},
+          {id:'break', label:'☕ Break',  mins:breakMins},
+        ].map(p=>(
+          <button key={p.id} onClick={()=>{if(!running){setPhase(p.id);setTimeLeft(p.mins*60);}}}
+            style={{
+              flex:1,padding:'10px',borderRadius:14,fontSize:13,fontWeight:700,
+              border:`1.5px solid ${phase===p.id?(p.id==='work'?C.mint:C.blue):C.bdr}`,
+              background:phase===p.id?(p.id==='work'?C.mintD:C.blueD):'transparent',
+              color:phase===p.id?(p.id==='work'?C.mint:C.blue):C.mut,
+              transition:'all 0.2s',
+            }}>
+            {p.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Timer Ring */}
+      <div style={{display:'flex',justifyContent:'center',marginBottom:28}}>
+        <div style={{position:'relative',width:210,height:210}} className={running?'pulse':''}>
+          <svg width={210} height={210} viewBox="0 0 210 210">
+            {/* Track */}
+            <circle cx={105} cy={105} r={R} fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth={11}/>
+            {/* Glow track */}
+            {running&&<circle cx={105} cy={105} r={R} fill="none" stroke={ringColor} strokeWidth={11} opacity={0.08}/>}
+            {/* Progress */}
+            <circle cx={105} cy={105} r={R} fill="none"
+              stroke={running||prog>0?ringColor:'rgba(255,255,255,0.05)'}
+              strokeWidth={11} strokeLinecap="round"
+              strokeDasharray={circ} strokeDashoffset={circ*(1-prog)}
+              style={{transform:'rotate(-90deg)',transformOrigin:'center',
+                transition:'stroke-dashoffset 0.8s cubic-bezier(0.4,0,0.2,1)',
+                filter:running?`drop-shadow(0 0 6px ${ringColor}60)`:''}}/>
+          </svg>
+          <div style={{position:'absolute',inset:0,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:4}}>
+            <div style={{fontFamily:'Syne',fontWeight:800,fontSize:44,color:C.txt,letterSpacing:'-2px',lineHeight:1}}>
+              {fmtTimer(timeLeft)}
+            </div>
+            <div style={{
+              fontSize:11,fontWeight:700,letterSpacing:'0.1em',
+              color:running?ringColor:C.mut,transition:'color 0.3s',
+            }}>
+              {running?(phase==='work'?'FOCUSING':'ON BREAK'):(phase==='work'?'READY':'BREAK READY')}
+            </div>
+            {sessionsDone>0&&(
+              <div style={{fontSize:11,color:C.amber,marginTop:2}}>
+                {'●'.repeat(Math.min(sessionsDone,4))}
+                {sessionsDone>4&&` +${sessionsDone-4}`}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Controls */}
+      <div style={{display:'flex',gap:10,marginBottom:22}}>
+        <button onClick={toggle} className={running?'':'glow'}
+          style={{
+            flex:1,borderRadius:17,padding:'17px',
+            fontFamily:'Syne',fontSize:16,fontWeight:800,letterSpacing:'0.02em',
+            background:running?C.redD:C.mint,
+            color:running?C.red:'#060A10',
+            border:running?`1.5px solid ${C.red}50`:'none',
+            transition:'all 0.2s',
+          }}>
+          {running?'⏸  Pause':'▶  Start'}
+        </button>
+        <button onClick={reset}
+          style={{
+            width:56,height:56,borderRadius:17,fontSize:20,
+            border:`1.5px solid ${C.bdr}`,color:C.sub,
+            background:'transparent',transition:'all 0.15s',
+          }}>↺</button>
+      </div>
+
+      {/* Duration settings */}
+      {!running&&(
+        <div style={{background:C.card,border:`1.5px solid ${C.bdr}`,borderRadius:18,padding:16,marginBottom:18}} className="fade-up">
+          <div style={{fontSize:11,fontWeight:800,color:C.sub,marginBottom:12,textTransform:'uppercase',letterSpacing:'0.07em'}}>
+            Timer Settings
+          </div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+            <div>
+              <div style={{fontSize:11,color:C.mut,marginBottom:6}}>Focus (min)</div>
+              <input type="number" value={workMins} min="5" max="60"
+                onChange={e=>{const v=Math.max(5,parseInt(e.target.value)||25);setWorkMins(v);if(phase==='work')setTimeLeft(v*60);}}/>
+            </div>
+            <div>
+              <div style={{fontSize:11,color:C.mut,marginBottom:6}}>Break (min)</div>
+              <input type="number" value={breakMins} min="1" max="30"
+                onChange={e=>{const v=Math.max(1,parseInt(e.target.value)||5);setBreakMins(v);if(phase==='break')setTimeLeft(v*60);}}/>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Session history */}
+      {todaySessions.length>0&&(
+        <div style={{marginBottom:20}}>
+          <div style={{fontSize:11,fontWeight:800,color:C.sub,marginBottom:10,textTransform:'uppercase',letterSpacing:'0.07em'}}>
+            Today's Sessions
+          </div>
+          {[...todaySessions].reverse().map((s,i)=>{
+            const linked=s.taskId?tasks.find(t=>t.id===s.taskId):null;
+            return(
+              <div key={s.id} style={{
+                display:'flex',alignItems:'center',gap:12,
+                background:C.card,border:`1.5px solid ${C.bdr}`,
+                borderRadius:13,padding:'10px 14px',marginBottom:7,
+              }}>
+                <div style={{
+                  width:28,height:28,borderRadius:9,flexShrink:0,
+                  background:C.mintD,color:C.mint,fontSize:12,fontWeight:800,
+                  display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'Syne',
+                }}>{todaySessions.length-i}</div>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:13,color:C.txt,fontWeight:500}}>{s.duration} min session</div>
+                  {linked&&<div style={{fontSize:11,color:C.mut,marginTop:2}}>{linked.title}</div>}
+                </div>
+                <Pill text="+30 pts" color={C.mint} bg={C.mintD}/>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ╔═══════════════════════════════════════╗
+   ║  HABITS SCREEN                        ║
+   ╚═══════════════════════════════════════╝ */
+const HABIT_EMOJIS=['🏃','📖','🧘','💪','✍️','🥗','💧','🎨','📵','🌿','🎵','🌟','🏋️','🚴','🙏'];
+
+function HabitsScreen({habits,setHabits,addPts,awardBadge}){
+  const [adding,setAdding]=useState(false);
+  const [form,setForm]=useState({title:'',emoji:'🌟',category:'personal'});
+  const today=todayStr();
+  const weekDates=getWeekDates();
+  const doneToday=habits.filter(h=>h.completedDates.includes(today)).length;
+
+  const toggle=id=>{
+    setHabits(hs=>hs.map(h=>{
+      if(h.id!==id)return h;
+      const already=h.completedDates.includes(today);
+      const dates=already
+        ?h.completedDates.filter(d=>d!==today)
+        :[...h.completedDates,today];
+      if(!already){
+        const s=calcStreak(dates);
+        addPts(20,'Habit checked!');
+        if(s>=3)awardBadge('habit_3');
+        if(s>=7)awardBadge('habit_7');
+      }
+      return{...h,completedDates:dates};
+    }));
+  };
+
+  const addHabit=()=>{
+    if(!form.title.trim())return;
+    setHabits(hs=>[...hs,{id:uid(),title:form.title.trim(),emoji:form.emoji,
+      category:form.category,completedDates:[],createdAt:today}]);
+    setForm({title:'',emoji:'🌟',category:'personal'});
+    setAdding(false);
+  };
+
+  const del=id=>setHabits(hs=>hs.filter(h=>h.id!==id));
+
+  return(
+    <div style={{padding:'28px 20px 0'}}>
+      {/* Header */}
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:22}}>
+        <div>
+          <h2 style={{fontFamily:'Syne',fontWeight:800,fontSize:22,color:C.txt}}>Habits</h2>
+          <div style={{fontSize:12,color:C.mut,marginTop:3}}>{doneToday}/{habits.length} done today</div>
+        </div>
+        <button onClick={()=>setAdding(!adding)} style={{
+          width:38,height:38,borderRadius:13,
+          background:adding?C.redD:C.mint,
+          color:adding?C.red:'#060A10',fontSize:22,fontWeight:700,
+          display:'flex',alignItems:'center',justifyContent:'center',
+          border:adding?`1.5px solid ${C.red}40`:'none',transition:'all 0.2s',
+        }}>{adding?'×':'+'}</button>
+      </div>
+
+      {/* Add form */}
+      {adding&&(
+        <div style={{background:C.card,border:`1.5px solid rgba(20,240,160,0.2)`,borderRadius:18,padding:16,marginBottom:20}} className="fade-up">
+          <div style={{marginBottom:12}}>
+            <div style={{fontSize:11,color:C.mut,marginBottom:8,fontWeight:600}}>Pick an emoji</div>
+            <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
+              {HABIT_EMOJIS.map(e=>(
+                <button key={e} onClick={()=>setForm(f=>({...f,emoji:e}))} style={{
+                  width:38,height:38,borderRadius:11,fontSize:19,
+                  border:`1.5px solid ${form.emoji===e?C.mint:C.bdr}`,
+                  background:form.emoji===e?C.mintD:'rgba(255,255,255,0.03)',
+                  transition:'all 0.15s',
+                }}>{e}</button>
+              ))}
+            </div>
+          </div>
+          <input type="text" placeholder="Habit name" value={form.title}
+            onChange={e=>setForm(f=>({...f,title:e.target.value}))}
+            onKeyDown={e=>{if(e.key==='Enter')addHabit();}}
+            style={{marginBottom:10}} autoFocus/>
+          <select value={form.category} onChange={e=>setForm(f=>({...f,category:e.target.value}))} style={{marginBottom:12}}>
+            {Object.entries(CATS).map(([k,v])=>(
+              <option key={k} value={k}>{v.emoji} {v.label}</option>
+            ))}
+          </select>
+          <button onClick={addHabit} style={{
+            width:'100%',background:C.mint,color:'#060A10',
+            borderRadius:13,padding:'12px',fontSize:14,fontWeight:700,fontFamily:'Syne',
+          }}>Add Habit</button>
+        </div>
+      )}
+
+      {/* Empty state */}
+      {habits.length===0&&(
+        <div style={{textAlign:'center',padding:'60px 20px',color:C.mut}} className="fade-up">
+          <div style={{fontSize:48,marginBottom:14}}>◆</div>
+          <div style={{fontSize:16,fontWeight:700,color:C.sub,marginBottom:8}}>No habits yet</div>
+          <div style={{fontSize:13,lineHeight:1.7}}>Build lasting habits one day at a time.<br/>Tap + to get started.</div>
+        </div>
+      )}
+
+      {/* Habit cards */}
+      {habits.map(h=>{
+        const done=h.completedDates.includes(today);
+        const streak=calcStreak(h.completedDates);
+        const cat=CATS[h.category]||CATS.personal;
+        return(
+          <div key={h.id} className="fade-up" style={{
+            background:done?cat.dim:C.card,
+            border:`1.5px solid ${done?cat.color+'30':C.bdr}`,
+            borderRadius:18,padding:'14px 16px',marginBottom:10,
+            transition:'all 0.3s',
+          }}>
+            <div style={{display:'flex',alignItems:'center',gap:13}}>
+              {/* Checkbox */}
+              <button onClick={()=>toggle(h.id)} style={{
+                width:48,height:48,borderRadius:16,fontSize:24,flexShrink:0,
+                border:`2px solid ${done?cat.color:C.bdr}`,
+                background:done?cat.dim:'rgba(255,255,255,0.03)',
+                transition:'all 0.2s',
+                display:'flex',alignItems:'center',justifyContent:'center',
+                position:'relative',overflow:'hidden',
+              }}>
+                <span style={{position:'relative',zIndex:1}}>{h.emoji}</span>
+                {done&&<div style={{
+                  position:'absolute',inset:0,
+                  background:cat.color+'15',
+                  display:'flex',alignItems:'flex-end',justifyContent:'flex-end',
+                  padding:'3px',
+                }}>
+                  <span style={{fontSize:10,color:cat.color,fontWeight:900}}>✓</span>
+                </div>}
+              </button>
+              {/* Info */}
+              <div style={{flex:1}}>
+                <div style={{fontSize:14,fontWeight:600,color:done?cat.color:C.txt}}>{h.title}</div>
+                <div style={{display:'flex',alignItems:'center',gap:8,marginTop:4}}>
+                  {streak>0&&(
+                    <span style={{fontSize:11,color:C.amber,fontWeight:700}}>🔥 {streak}d streak</span>
+                  )}
+                  <span style={{fontSize:11,color:C.mut}}>{cat.emoji} {cat.label}</span>
+                </div>
+              </div>
+              {/* Actions */}
+              <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:6}}>
+                {done&&<Pill text="Done ✓" color={cat.color} bg={cat.dim}/>}
+                <button onClick={()=>del(h.id)} style={{color:C.mut,fontSize:16,lineHeight:1,padding:'2px 4px'}}>×</button>
+              </div>
+            </div>
+            {/* 7-day strip */}
+            <div style={{display:'flex',gap:3,marginTop:12}}>
+              {weekDates.map((d,i)=>{
+                const checked=h.completedDates.includes(d);
+                const isToday=d===today;
+                const dayLabel=['M','T','W','T','F','S','S'][i];
+                return(
+                  <div key={d} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:3}}>
+                    <div style={{
+                      width:'100%',height:5,borderRadius:3,
+                      background:checked?cat.color:(isToday?'rgba(255,255,255,0.2)':'rgba(255,255,255,0.05)'),
+                      transition:'background 0.3s',
+                    }}/>
+                    <span style={{fontSize:8,color:isToday?cat.color:C.mut,fontWeight:isToday?700:400}}>{dayLabel}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ╔═══════════════════════════════════════╗
+   ║  STATS SCREEN                         ║
+   ╚═══════════════════════════════════════╝ */
+function StatsScreen({tasks,sessions,habits,points,badges}){
+  const [insight,setInsight]=useState('');
+  const [loading,setLoading]=useState(false);
+  const [apiKey,setApiKey]=useState('');
+  const [showKey,setShowKey]=useState(false);
+  const today=todayStr();
+  const weekDates=getWeekDates();
+
+  /* Computed stats */
+  const weekTaskData=weekDates.map(d=>{
+    const all=tasks.filter(t=>t.date===d);
+    return{
+      d,
+      done:all.filter(t=>t.completed).length,
+      total:all.length,
+      day:new Date(d+'T12:00:00').toLocaleDateString('en',{weekday:'short'}),
+    };
+  });
+  const weekFocusData=weekDates.map(d=>{
+    const mins=sessions.filter(s=>s.date===d&&s.type==='work'&&s.completed).reduce((s,x)=>s+x.duration,0);
+    return{d,mins,day:new Date(d+'T12:00:00').toLocaleDateString('en',{weekday:'short'})};
+  });
+
+  const totalTasksDone=tasks.filter(t=>t.completed).length;
+  const totalFocusMins=sessions.filter(s=>s.type==='work'&&s.completed).reduce((s,x)=>s+x.duration,0);
+  const longestStreak=habits.reduce((mx,h)=>Math.max(mx,calcStreak(h.completedDates)),0);
+  const maxBar=Math.max(...weekTaskData.map(d=>d.total),1);
+  const maxFoc=Math.max(...weekFocusData.map(d=>d.mins),1);
+  const weekFocusMins=weekFocusData.reduce((s,d)=>s+d.mins,0);
+  const weekTasksDone=weekTaskData.reduce((s,d)=>s+d.done,0);
+
+  /* Rule-based smart insights */
+  const smartInsights=()=>{
+    const lines=[];
+    if(weekFocusMins<60)lines.push("💡 Your focus time this week is below 60 min. Try 2 short Pomodoros each morning to build the habit.");
+    else lines.push(`🔥 Great focus this week — ${weekFocusMins} min logged! You're building real momentum.`);
+    if(longestStreak>=3)lines.push(`🏆 Your longest habit streak is ${longestStreak} days. Consistency compounds — keep it going!`);
+    else lines.push("🌱 Small daily habits beat occasional big efforts. Try checking off at least one habit every day.");
+    if(weekTasksDone<5)lines.push("📝 Start with 2–3 clear tasks each morning. Small wins build confidence and momentum.");
+    else lines.push(`✅ You completed ${weekTasksDone} tasks this week. That's solid output!`);
+    lines.push("📵 Every offline activity you log is a direct investment in your focus and mental clarity.");
+    return lines.slice(0,3).join('\n\n');
+  };
+
+  const fetchAI=async()=>{
+    if(!apiKey){setShowKey(true);return;}
+    setLoading(true);setShowKey(false);
+    try{
+      const res=await fetch('https://api.anthropic.com/v1/messages',{
+        method:'POST',
+        headers:{
+          'Content-Type':'application/json',
+          'x-api-key':apiKey,
+          'anthropic-version':'2023-06-01',
+          'anthropic-dangerous-direct-browser-access':'true',
+        },
+        body:JSON.stringify({
+          model:'claude-sonnet-4-20250514',max_tokens:350,
+          system:'You are a supportive productivity coach for a young person aged 17-24. Give 3 brief, specific, encouraging insights (2-3 sentences each) based on their data. Use plain language and one relevant emoji per insight. Focus on reducing phone use and building focus habits.',
+          messages:[{role:'user',content:`Weekly stats:
+- Tasks completed: ${weekTasksDone}
+- Focus time: ${weekFocusMins} min
+- Longest habit streak: ${longestStreak} days  
+- Total points: ${points}
+- Badges earned: ${badges.length}
+Give me 3 personalized insights to improve productivity and reduce phone dependency.`}],
+        }),
+      });
+      const data=await res.json();
+      if(data.content?.[0]?.text)setInsight(data.content[0].text);
+      else setInsight(smartInsights());
+    }catch{setInsight(smartInsights());}
+    setLoading(false);
+  };
+
+  return(
+    <div style={{padding:'28px 20px 0'}}>
+      <div style={{marginBottom:22}}>
+        <h2 style={{fontFamily:'Syne',fontWeight:800,fontSize:22,color:C.txt}}>Your Stats</h2>
+        <div style={{fontSize:12,color:C.mut,marginTop:3}}>Your productivity journey</div>
+      </div>
+
+      {/* Key Metrics Grid */}
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:20}}>
+        {[
+          {val:totalTasksDone,   label:'Tasks Done',   icon:'✅', color:C.mint},
+          {val:`${Math.floor(totalFocusMins/60)}h ${totalFocusMins%60}m`, label:'Total Focus', icon:'⏱', color:C.blue},
+          {val:`${longestStreak}d`,label:'Best Streak',  icon:'🔥', color:C.amber},
+          {val:badges.length,    label:'Badges',       icon:'🏅', color:C.purple},
+        ].map(m=>(
+          <div key={m.label} style={{background:C.card,border:`1.5px solid ${C.bdr}`,borderRadius:16,padding:'14px 16px'}} className="fade-up">
+            <div style={{fontSize:22,marginBottom:5}}>{m.icon}</div>
+            <div style={{fontFamily:'Syne',fontWeight:800,fontSize:24,color:m.color}}>{m.val}</div>
+            <div style={{fontSize:11,color:C.mut,marginTop:3,fontWeight:500}}>{m.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Weekly Tasks Chart */}
+      <div style={{background:C.card,border:`1.5px solid ${C.bdr}`,borderRadius:18,padding:16,marginBottom:14}} className="fade-up">
+        <div style={{fontSize:11,fontWeight:800,color:C.sub,marginBottom:16,textTransform:'uppercase',letterSpacing:'0.07em'}}>
+          Tasks This Week
+        </div>
+        <div style={{display:'flex',alignItems:'flex-end',gap:5,height:88}}>
+          {weekTaskData.map(d=>{
+            const isT=d.d===today;
+            const hTotal=d.total>0?(d.total/maxBar)*78:3;
+            const hDone=d.total>0?(d.done/maxBar)*78:0;
+            return(
+              <div key={d.d} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:5}}>
+                <div style={{width:'100%',position:'relative',height:hTotal,minHeight:3,borderRadius:5,background:'rgba(255,255,255,0.06)'}}>
+                  {d.done>0&&<div style={{
+                    position:'absolute',bottom:0,width:'100%',
+                    height:`${(d.done/Math.max(d.total,1))*100}%`,minHeight:3,
+                    background:isT?C.mint:`${C.mint}55`,
+                    borderRadius:5,transition:'height 0.6s ease',
+                  }}/>}
+                </div>
+                <span style={{fontSize:9,color:isT?C.mint:C.mut,fontWeight:isT?800:400}}>{d.day}</span>
+              </div>
+            );
+          })}
+        </div>
+        <div style={{display:'flex',gap:14,marginTop:10,fontSize:11,color:C.mut}}>
+          <span><span style={{color:C.mint}}>■</span> Done</span>
+          <span><span style={{color:'rgba(255,255,255,0.15)'}}>■</span> Total</span>
+        </div>
+      </div>
+
+      {/* Weekly Focus Chart */}
+      <div style={{background:C.card,border:`1.5px solid ${C.bdr}`,borderRadius:18,padding:16,marginBottom:14}} className="fade-up">
+        <div style={{fontSize:11,fontWeight:800,color:C.sub,marginBottom:16,textTransform:'uppercase',letterSpacing:'0.07em'}}>
+          Focus Time (min)
+        </div>
+        <div style={{display:'flex',alignItems:'flex-end',gap:5,height:72}}>
+          {weekFocusData.map(d=>{
+            const isT=d.d===today;
+            const h=d.mins>0?(d.mins/maxFoc)*65:3;
+            return(
+              <div key={d.d} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:5}}>
+                <div style={{
+                  width:'100%',height:Math.max(h,3),borderRadius:5,
+                  background:isT?C.amber:`${C.amber}50`,transition:'height 0.6s ease',
+                }}/>
+                <span style={{fontSize:9,color:isT?C.amber:C.mut,fontWeight:isT?800:400}}>{d.day}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Habits consistency */}
+      <div style={{background:C.card,border:`1.5px solid ${C.bdr}`,borderRadius:18,padding:16,marginBottom:14}} className="fade-up">
+        <div style={{fontSize:11,fontWeight:800,color:C.sub,marginBottom:14,textTransform:'uppercase',letterSpacing:'0.07em'}}>
+          Habit Consistency
+        </div>
+        {habits.length===0?<div style={{fontSize:13,color:C.mut}}>No habits tracked yet</div>:(
+          habits.map(h=>{
+            const streak=calcStreak(h.completedDates);
+            const cat=CATS[h.category]||CATS.personal;
+            const rate=weekDates.filter(d=>h.completedDates.includes(d)).length;
+            return(
+              <div key={h.id} style={{display:'flex',alignItems:'center',gap:10,marginBottom:10}}>
+                <span style={{fontSize:18,width:26,flexShrink:0}}>{h.emoji}</span>
+                <div style={{flex:1}}>
+                  <div style={{display:'flex',justifyContent:'space-between',marginBottom:4,fontSize:12}}>
+                    <span style={{color:C.txt,fontWeight:500}}>{h.title}</span>
+                    <span style={{color:streak>0?C.amber:C.mut,fontWeight:600}}>{streak>0?`🔥 ${streak}d`:'—'}</span>
+                  </div>
+                  <div style={{background:'rgba(255,255,255,0.05)',borderRadius:4,height:4}}>
+                    <div style={{height:4,borderRadius:4,background:cat.color,width:`${(rate/7)*100}%`,transition:'width 0.6s ease'}}/>
+                  </div>
+                </div>
+                <span style={{fontSize:11,color:C.mut,width:30,textAlign:'right'}}>{rate}/7</span>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Badges */}
+      {badges.length>0&&(
+        <div style={{background:C.card,border:`1.5px solid ${C.bdr}`,borderRadius:18,padding:16,marginBottom:14}} className="fade-up">
+          <div style={{fontSize:11,fontWeight:800,color:C.sub,marginBottom:14,textTransform:'uppercase',letterSpacing:'0.07em'}}>
+            Badges Earned
+          </div>
+          <div style={{display:'flex',flexWrap:'wrap',gap:8}}>
+            {BADGES.filter(b=>badges.includes(b.id)).map(b=>(
+              <div key={b.id} style={{
+                background:C.amberD,border:`1.5px solid rgba(251,191,36,0.25)`,
+                borderRadius:14,padding:'7px 12px',
+                display:'flex',alignItems:'center',gap:7,
+              }}>
+                <span style={{fontSize:17}}>{b.emoji}</span>
+                <div>
+                  <div style={{fontSize:12,fontWeight:700,color:C.amber}}>{b.name}</div>
+                  <div style={{fontSize:10,color:C.mut}}>{b.desc}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* AI Insights */}
+      <div style={{
+        background:`linear-gradient(135deg,rgba(167,139,250,0.07),rgba(167,139,250,0.03))`,
+        border:`1.5px solid rgba(167,139,250,0.2)`,
+        borderRadius:18,padding:16,marginBottom:28,
+      }} className="fade-up">
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
+          <div style={{fontSize:11,fontWeight:800,color:C.purple,textTransform:'uppercase',letterSpacing:'0.07em'}}>
+            🤖 AI Insights
+          </div>
+          <button onClick={()=>{
+            if(!insight){fetchAI();}
+            else{setInsight('');setShowKey(false);}
+          }} style={{
+            fontSize:12,fontWeight:700,color:C.purple,
+            background:'rgba(167,139,250,0.12)',
+            border:`1.5px solid rgba(167,139,250,0.25)`,
+            borderRadius:20,padding:'6px 14px',
+          }}>
+            {loading?'Thinking…':(insight?'Refresh':'Get Insights')}
+          </button>
+        </div>
+
+        {showKey&&(
+          <div className="fade-up" style={{marginBottom:12}}>
+            <div style={{fontSize:12,color:C.sub,marginBottom:7,lineHeight:1.5}}>
+              Enter your Claude API key for personalized AI insights. Or skip to use smart local recommendations.
+            </div>
+            <div style={{display:'flex',gap:8,marginBottom:8}}>
+              <input type="password" placeholder="sk-ant-api..." value={apiKey}
+                onChange={e=>setApiKey(e.target.value)}
+                onKeyDown={e=>{if(e.key==='Enter')fetchAI();}}
+                style={{flex:1,fontSize:13}}/>
+              <button onClick={fetchAI} style={{
+                background:C.purple,color:'#fff',borderRadius:12,
+                padding:'0 16px',fontSize:13,fontWeight:700,flexShrink:0,minWidth:48,
+              }}>Go</button>
+            </div>
+            <button onClick={()=>{setShowKey(false);setInsight(smartInsights());}}
+              style={{fontSize:11,color:C.sub,textDecoration:'underline'}}>
+              Use smart recommendations instead →
+            </button>
+          </div>
+        )}
+
+        {loading&&(
+          <div style={{textAlign:'center',padding:20,color:C.sub,fontSize:14}}>
+            Analyzing your patterns…  ✨
+          </div>
+        )}
+
+        {insight&&!loading&&(
+          <div className="fade-up" style={{fontSize:13,color:C.txt,lineHeight:1.7,whiteSpace:'pre-line'}}>
+            {insight}
+          </div>
+        )}
+
+        {!insight&&!loading&&!showKey&&(
+          <div style={{fontSize:12,color:C.mut,lineHeight:1.7}}>
+            Get personalized recommendations based on your usage patterns — powered by Claude AI or smart local analysis.
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ╔═══════════════════════════════════════╗
+   ║  MOUNT                                ║
+   ╚═══════════════════════════════════════╝ */
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
