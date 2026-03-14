@@ -1,462 +1,260 @@
-# Focusly — Focus. Flow. Grow.
-> Anti-procrastination productivity app for young people aged 17–24
+# Flowvity Desktop
+
+> Focus. Flow. Grow. — Anti-procrastination desktop app built with Electron.
 
 ---
 
-## 1. System Architecture
+## Features
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                      FLOWVITY MVP                           │
-│                                                             │
-│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐  │
-│  │   Frontend   │    │  AI Engine   │    │  Persistence │  │
-│  │  React SPA   │◄──►│ Claude API / │    │ localStorage │  │
-│  │  (Mobile UI) │    │ Rule-based   │    │  (Browser)   │  │
-│  └──────────────┘    └──────────────┘    └──────────────┘  │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### MVP Architecture (Phase 1 — this file)
-- **Single-page React application** with localStorage persistence
-- **5 core screens**: Home, Tasks, Focus, Habits, Stats
-- **AI layer**: Rule-based insights locally + optional Claude API integration
-- **Zero backend required** — runs entirely in the browser
-- **Gamification engine**: Points, levels, badges
-
-### Production Architecture (Phase 2)
-```
-┌──────────────────────────────────────────────────┐
-│  Mobile App (React Native / Expo)                │
-│  Web App (Next.js PWA)                           │
-└───────────────────┬──────────────────────────────┘
-                    │ HTTPS REST + WebSocket
-┌───────────────────▼──────────────────────────────┐
-│  API Gateway (Node.js / FastAPI)                 │
-│  ├── Auth Service (JWT)                          │
-│  ├── Task Service                                │
-│  ├── Analytics Service                           │
-│  └── AI Service (Claude API)                     │
-└───────────────────┬──────────────────────────────┘
-                    │
-┌───────────────────▼──────────────────────────────┐
-│  PostgreSQL (users, tasks, habits, sessions)     │
-│  Redis (sessions, cache, real-time)              │
-└──────────────────────────────────────────────────┘
-```
+- ✅ Full desktop application (Windows, macOS, Linux)
+- 🔐 User registration + email verification
+- 🎯 Pomodoro focus timer
+- ✅ Daily task system
+- 🔥 Habit tracking with streaks
+- 📊 Weekly productivity statistics
+- 🤖 AI-powered insights (optional)
+- 🏅 Gamification (points, levels, badges)
+- 📵 Off-device activity suggestions
 
 ---
 
-## 2. Technology Stack
+## Quick Start
 
-### MVP (Current)
-| Layer         | Technology       | Reason                                      |
-|---------------|------------------|---------------------------------------------|
-| Frontend      | React 18         | Component model, hooks, reactive UI         |
-| Styling       | Pure CSS-in-JS   | No dependencies, full control               |
-| Persistence   | localStorage     | Instant, zero-setup, works offline          |
-| AI            | Rule-based + Claude API | Functional without key, enhanced with it |
-| Fonts         | Google Fonts (Syne + Plus Jakarta Sans) | Distinctive, modern feel |
+### 1. Prerequisites
 
-### Production Stack (Recommended)
-| Layer         | Technology       | Reason                                      |
-|---------------|------------------|---------------------------------------------|
-| Mobile        | React Native / Expo | Cross-platform iOS + Android              |
-| Web           | Next.js 14 (App Router) | SSR, PWA, fast performance             |
-| Styling       | Tailwind CSS + CSS Vars | Design system consistency              |
-| Backend       | FastAPI (Python) or Node.js + Express | Performance + AI libraries      |
-| Database      | PostgreSQL + Prisma ORM | Reliable relational data             |
-| Cache         | Redis            | Session data, streak cache, queues          |
-| Auth          | Clerk or Supabase Auth | Fast auth implementation               |
-| AI            | Claude API (Anthropic) | Personalized behavioral recommendations |
-| Hosting       | Vercel (web) + Railway (API) | Zero-config, scalable            |
-| Analytics     | PostHog (self-hosted) | Privacy-respecting usage analytics    |
+- **Node.js** 18+ (https://nodejs.org)
+- **npm** 9+
+- A Gmail account (or any SMTP server) for sending verification emails
+
+### 2. Install dependencies
+
+```bash
+cd flowvity-desktop
+npm install
+```
+
+### 3. Generate the app icon
+
+```bash
+npm run create-icon
+```
+
+This reads `assets/icon.svg` and generates `assets/icon.png` (and other sizes).
+
+### 4. Configure email (SMTP)
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` with your SMTP credentials:
+
+```env
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=you@gmail.com
+SMTP_PASS=your-16-char-app-password
+SMTP_FROM="Flowvity <you@gmail.com>"
+```
+
+#### Gmail setup (recommended)
+
+1. Enable 2-Factor Authentication on your Google account
+2. Go to https://myaccount.google.com/apppasswords
+3. Create an App Password for "Mail"
+4. Use that 16-character password as `SMTP_PASS`
+
+### 5. Run in development
+
+```bash
+npm start
+```
+
+### 6. Build for distribution
+
+```bash
+npm run build
+```
+
+Output goes to `out/` directory.
 
 ---
 
-## 3. Project Structure (Production)
+## Project Structure
 
 ```
-flowvity/
-├── apps/
-│   ├── web/                          # Next.js web app
-│   │   ├── app/
-│   │   │   ├── (auth)/
-│   │   │   │   ├── login/page.tsx
-│   │   │   │   └── signup/page.tsx
-│   │   │   ├── (app)/
-│   │   │   │   ├── dashboard/page.tsx
-│   │   │   │   ├── tasks/page.tsx
-│   │   │   │   ├── focus/page.tsx
-│   │   │   │   ├── habits/page.tsx
-│   │   │   │   └── stats/page.tsx
-│   │   │   ├── api/
-│   │   │   │   ├── tasks/route.ts
-│   │   │   │   ├── habits/route.ts
-│   │   │   │   ├── sessions/route.ts
-│   │   │   │   └── ai/insights/route.ts
-│   │   │   └── layout.tsx
-│   │   ├── components/
-│   │   │   ├── ui/                   # Reusable design system
-│   │   │   │   ├── Button.tsx
-│   │   │   │   ├── Card.tsx
-│   │   │   │   ├── ProgressRing.tsx
-│   │   │   │   └── Toast.tsx
-│   │   │   ├── tasks/
-│   │   │   │   ├── TaskCard.tsx
-│   │   │   │   └── AddTaskForm.tsx
-│   │   │   ├── focus/
-│   │   │   │   ├── PomodoroTimer.tsx
-│   │   │   │   └── SessionHistory.tsx
-│   │   │   └── habits/
-│   │   │       ├── HabitCard.tsx
-│   │   │       └── StreakDots.tsx
-│   │   ├── hooks/
-│   │   │   ├── useTasks.ts
-│   │   │   ├── useHabits.ts
-│   │   │   ├── useTimer.ts
-│   │   │   └── usePoints.ts
-│   │   ├── lib/
-│   │   │   ├── db.ts                 # Prisma client
-│   │   │   ├── ai.ts                 # Claude API wrapper
-│   │   │   ├── streak.ts             # Streak calculation
-│   │   │   └── gamification.ts       # Points & badges
-│   │   └── types/
-│   │       └── index.ts
-│   │
-│   └── mobile/                       # React Native app (future)
+flowvity-desktop/
+├── main.js              # Electron main process
+│                          ├── BrowserWindow setup
+│                          ├── SQLite database (auth)
+│                          └── IPC handlers (auth + window)
+├── preload.js           # Secure contextBridge IPC bridge
+├── forge.config.js      # Electron Forge build config
+├── .env                 # SMTP credentials (create from .env.example)
+├── .env.example         # SMTP configuration template
 │
-├── packages/
-│   └── shared/                       # Shared types & utils
-│       ├── types/
-│       └── constants/
+├── src/
+│   ├── index.html       # HTML shell + CSS + loads renderer.js
+│   └── renderer.js      # Complete React app
+│                          ├── Auth screens (Login, Register, Verify)
+│                          ├── Custom titlebar (cross-platform)
+│                          └── All 5 app screens (Home, Tasks, Focus, Habits, Stats)
 │
-├── backend/
-│   ├── src/
-│   │   ├── routes/
-│   │   │   ├── tasks.py
-│   │   │   ├── habits.py
-│   │   │   ├── sessions.py
-│   │   │   └── ai.py
-│   │   ├── models/
-│   │   │   ├── user.py
-│   │   │   ├── task.py
-│   │   │   ├── habit.py
-│   │   │   └── session.py
-│   │   ├── services/
-│   │   │   ├── ai_service.py         # Claude API integration
-│   │   │   ├── streak_service.py
-│   │   │   └── gamification.py
-│   │   └── main.py
-│   └── requirements.txt
+├── assets/
+│   ├── icon.svg         # SVG source icon
+│   └── icon.png         # Generated PNG (run npm run create-icon)
 │
-├── database/
-│   ├── migrations/
-│   └── schema.prisma
-│
-└── docs/
-    ├── architecture.md
-    └── api.md
+└── scripts/
+    └── create-icon.js   # Icon generator (uses sharp)
 ```
 
 ---
 
-## 4. Database Schema
+## Architecture
+
+### Authentication Flow
+
+```
+App opens
+    │
+    ▼
+Check localStorage for session token
+    │
+    ├── Token found → Validate with main process (SQLite)
+    │       ├── Valid → Show App
+    │       └── Invalid/expired → Show Login
+    │
+    └── No token → Show Login
+
+Register flow:
+  Fill form → Register (main.js: hash pw, save to SQLite, send code) → Verify screen
+  Enter 6-digit code → Verify (main.js: check code, mark verified, create session) → App
+
+Login flow:
+  Email + password → Login (main.js: check hash, create session token) → App
+```
+
+### Database (SQLite)
+
+Stored at: `~/.config/flowvity/flowvity.db` (Linux/Windows)
+           `~/Library/Application Support/flowvity/flowvity.db` (macOS)
 
 ```sql
--- Users
-CREATE TABLE users (
-  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  email      TEXT UNIQUE NOT NULL,
-  name       TEXT,
-  points     INTEGER DEFAULT 0,
-  level      TEXT DEFAULT 'Starter',
-  created_at TIMESTAMP DEFAULT NOW()
-);
-
--- Tasks
-CREATE TABLE tasks (
-  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id         UUID REFERENCES users(id) ON DELETE CASCADE,
-  title           TEXT NOT NULL,
-  category        TEXT CHECK (category IN ('study','health','creative','personal','work')),
-  estimated_mins  INTEGER DEFAULT 25,
-  completed       BOOLEAN DEFAULT FALSE,
-  date            DATE NOT NULL,
-  points_value    INTEGER DEFAULT 10,
-  completed_at    TIMESTAMP,
-  created_at      TIMESTAMP DEFAULT NOW()
-);
-
--- Habits
-CREATE TABLE habits (
-  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id     UUID REFERENCES users(id) ON DELETE CASCADE,
-  title       TEXT NOT NULL,
-  emoji       TEXT DEFAULT '🌟',
-  category    TEXT DEFAULT 'personal',
-  is_active   BOOLEAN DEFAULT TRUE,
-  created_at  TIMESTAMP DEFAULT NOW()
-);
-
-CREATE TABLE habit_completions (
-  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  habit_id   UUID REFERENCES habits(id) ON DELETE CASCADE,
-  user_id    UUID REFERENCES users(id) ON DELETE CASCADE,
-  date       DATE NOT NULL,
-  UNIQUE(habit_id, date)
-);
-
--- Focus Sessions
-CREATE TABLE focus_sessions (
-  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id     UUID REFERENCES users(id) ON DELETE CASCADE,
-  task_id     UUID REFERENCES tasks(id),
-  type        TEXT CHECK (type IN ('work','break')),
-  duration    INTEGER NOT NULL,  -- minutes
-  completed   BOOLEAN DEFAULT FALSE,
-  date        DATE NOT NULL,
-  started_at  TIMESTAMP,
-  ended_at    TIMESTAMP
-);
-
--- Badges
-CREATE TABLE user_badges (
-  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id    UUID REFERENCES users(id) ON DELETE CASCADE,
-  badge_id   TEXT NOT NULL,
-  earned_at  TIMESTAMP DEFAULT NOW(),
-  UNIQUE(user_id, badge_id)
-);
-
--- Off-device activity log
-CREATE TABLE offline_activities (
-  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id     UUID REFERENCES users(id) ON DELETE CASCADE,
-  activity    TEXT NOT NULL,
-  date        DATE NOT NULL,
-  created_at  TIMESTAMP DEFAULT NOW()
-);
+users    — id, username, email, password_hash, verification_code, is_verified
+sessions — id, user_id, token, expires_at
 ```
+
+Passwords are hashed with **bcryptjs** (12 rounds).
+Session tokens are 32-byte random hex strings, valid for 30 days.
+
+### User Data Isolation
+
+Each user's productivity data (tasks, habits, sessions, points) is stored in
+`localStorage` namespaced by their user ID:
+
+```
+{user.id}_tasks
+{user.id}_habits
+{user.id}_sessions
+...
+```
+
+So multiple users can share the same device without mixing data.
+
+### Security
+
+- `contextIsolation: true` — renderer cannot access Node.js APIs directly
+- `nodeIntegration: false` — no direct Node.js in renderer
+- All auth logic runs in the main process (never exposed to renderer)
+- `preload.js` uses `contextBridge` to expose only safe, typed methods
 
 ---
 
-## 5. AI Service (Python / FastAPI)
+## Customization
 
-```python
-# backend/src/services/ai_service.py
-import anthropic
-from typing import Optional
+### Change app colors
 
-client = anthropic.Anthropic()
+Edit the `C` object at the top of `src/renderer.js`:
 
-async def get_personalized_insights(user_stats: dict) -> str:
-    """
-    Generate personalized productivity insights using Claude.
-    Falls back to rule-based recommendations if API unavailable.
-    """
-    
-    system_prompt = """
-    You are Flowvity's AI productivity coach for young people (17-24).
-    
-    Rules:
-    - Be encouraging, specific, and actionable
-    - Keep responses under 250 words
-    - Use 1 relevant emoji per insight
-    - Focus on: reducing phone use, building focus habits, consistency
-    - Avoid generic advice — reference their actual numbers
-    - Never shame or criticize — always constructive
-    """
-    
-    user_message = f"""
-    User's weekly productivity data:
-    - Tasks completed: {user_stats['tasks_completed']}
-    - Focus sessions: {user_stats['focus_sessions']} ({user_stats['focus_minutes']} min)
-    - Habit streak (longest): {user_stats['longest_streak']} days
-    - Habits completed this week: {user_stats['habits_rate']}%
-    - Points earned: {user_stats['points']}
-    - Off-device activities logged: {user_stats['offline_activities']}
-    - Most productive day: {user_stats['best_day']}
-    
-    Give 3 specific, personalized insights to improve their productivity
-    and help them spend less time on their phone.
-    """
-    
-    try:
-        message = client.messages.create(
-            model="claude-opus-4-5",
-            max_tokens=400,
-            messages=[{"role": "user", "content": user_message}],
-            system=system_prompt
-        )
-        return message.content[0].text
-    except Exception:
-        return generate_rule_based_insights(user_stats)
-
-
-def generate_rule_based_insights(stats: dict) -> str:
-    """Fallback rule-based recommendation system."""
-    insights = []
-    
-    if stats['focus_minutes'] < 60:
-        insights.append("💡 Try to log at least 60 min of focused work this week. 2 Pomodoros per day is a great start.")
-    elif stats['focus_minutes'] > 180:
-        insights.append(f"🔥 Excellent focus this week — {stats['focus_minutes']} min! You're in the top tier.")
-    
-    if stats['longest_streak'] >= 7:
-        insights.append(f"🏆 Your {stats['longest_streak']}-day habit streak is exceptional. You're building real discipline.")
-    elif stats['longest_streak'] >= 3:
-        insights.append(f"🌱 A {stats['longest_streak']}-day streak is a great foundation. Stay consistent!")
-    else:
-        insights.append("🌱 Focus on one habit at a time. Just 5 minutes a day builds powerful momentum.")
-    
-    if stats['offline_activities'] == 0:
-        insights.append("📵 Try logging one offline activity today. Stepping away from screens recharges your focus.")
-    
-    return '\n\n'.join(insights[:3])
+```js
+const C = {
+  mint: '#14F0A0',   // primary accent
+  amber: '#FBBF24',  // points / warnings
+  blue: '#60A5FA',   // info
+  ...
+};
 ```
+
+### Change window size
+
+In `main.js`:
+
+```js
+const win = new BrowserWindow({
+  width: 1280,   // default width
+  height: 820,   // default height
+  minWidth: 760, // minimum usable width
+  minHeight: 560,
+  ...
+});
+```
+
+### Session duration
+
+In `main.js`, change `30 * 24 * 60 * 60 * 1000` (30 days) to your preferred duration.
+
+### Verification code expiry
+
+In `main.js`, change `15 * 60 * 1000` (15 minutes) as needed.
 
 ---
 
-## 6. How to Run the Application
+## Building for Distribution
 
-### Option A — Instant Demo (Recommended)
+### Windows (.exe)
 ```bash
-# Just open the file in any modern browser
-open flowvity.html
-
-# Or serve locally with Python
-python -m http.server 8080
-# Visit http://localhost:8080/flowvity.html
+npm run build
+# Output: out/make/squirrel.windows/
 ```
 
-### Option B — Full React + Vite Development Setup
+### macOS (.dmg)
 ```bash
-# 1. Initialize project
-npm create vite@latest flowvity -- --template react
-cd flowvity
-npm install
-
-# 2. Install dependencies
-npm install lucide-react
-npm install -D tailwindcss postcss autoprefixer
-npx tailwindcss init -p
-
-# 3. Copy src/ files from this project
-# (Split flowvity.html into component files under src/)
-
-# 4. Run dev server
-npm run dev
-# Visit http://localhost:5173
+npm run build
+# Output: out/make/zip/darwin/
 ```
+Note: macOS builds require code signing for distribution outside the App Store.
 
-### Option C — Full Stack (FastAPI Backend)
+### Linux (.deb / .rpm)
 ```bash
-# Backend
-pip install fastapi uvicorn anthropic psycopg2-binary python-dotenv
-cd backend
-cp .env.example .env
-# Add ANTHROPIC_API_KEY and DATABASE_URL to .env
-uvicorn src.main:app --reload --port 8000
-
-# Frontend
-cd apps/web
-npm install
-NEXT_PUBLIC_API_URL=http://localhost:8000 npm run dev
-```
-
-### Environment Variables
-```env
-# .env
-ANTHROPIC_API_KEY=sk-ant-api...
-DATABASE_URL=postgresql://user:pass@localhost:5432/flowvity
-NEXTAUTH_SECRET=your-secret-here
-NEXTAUTH_URL=http://localhost:3000
+npm run build
+# Output: out/make/deb/ or out/make/rpm/
 ```
 
 ---
 
-## 7. Key Features Explained
+## Troubleshooting
 
-### Pomodoro Timer
-- Default: 25 min focus / 5 min break (customizable)
-- Links to tasks for tracking what you worked on
-- Earns 30 points per completed session
-- Phase auto-transitions with toast notifications
+### "Email sending failed" error
+- Make sure `.env` file exists and has correct SMTP credentials
+- For Gmail: use an App Password, not your regular password
+- Test with `node -e "require('dotenv').config(); console.log(process.env.SMTP_USER)"`
 
-### Habit Tracking with Streaks
-- 7-day visual strip shows consistency at a glance
-- Streak calculated from consecutive completion dates
-- Badges unlock at 3-day and 7-day streaks
-- Completion earns 20 points
+### Icon not showing
+- Run `npm run create-icon` first
+- Make sure `assets/icon.png` exists
 
-### Gamification Engine
-| Action                  | Points |
-|-------------------------|--------|
-| Complete a task         | +10    |
-| Complete a Pomodoro     | +30    |
-| Check off a habit       | +20    |
-| Log offline activity    | +15    |
-| Unlock a badge          | +10–100|
+### App won't start
+- Run `npm install` again
+- Check Node.js version: `node --version` (needs 18+)
+- Check for errors: `npm start` shows the dev console
 
-### Off-Device Activity System
-- Rotating daily suggestions from 10 curated offline activities
-- One-tap logging with instant point reward
-- Logged activities tracked in daily stats
-- Psychological principle: reward the alternative, not just restrict
-
-### AI Recommendations
-- Works without an API key (rule-based logic)
-- Enhanced with Claude API for personalized insights
-- Analyzes: task patterns, focus time, habit streaks, day-of-week productivity
-- Designed to be encouraging, not shaming
-
----
-
-## 8. Behavioral Psychology Principles Applied
-
-| Principle                  | Implementation                                              |
-|----------------------------|-------------------------------------------------------------|
-| Temptation Bundling        | Pair tasks with immediate rewards (points)                  |
-| Variable Reward Schedule   | Badge system with unpredictable unlock timing               |
-| Commitment Devices         | Daily task list set in the morning                          |
-| Implementation Intentions  | Link tasks to specific time estimates                       |
-| Friction Reduction         | One-tap habit logging, minimal steps to start              |
-| Friction Addition          | Off-device suggestions require thought to replace           |
-| Progress Principle         | Visual progress ring drives completion drive                |
-| Identity-Based Habits      | Level names (Focused, Flow Master) reinforce identity       |
-| Loss Aversion              | Streak counter makes breaking the chain psychologically costly |
-| Temporal Motivation        | Daily reset creates urgency without overwhelming            |
-
----
-
-## 9. Next Improvements (Post-MVP)
-
-### Phase 2 — Backend & Sync (1-2 months)
-- [ ] User authentication (email + Google OAuth)
-- [ ] Cloud sync across devices (PostgreSQL + FastAPI)
-- [ ] Push notifications for habit reminders
-- [ ] Weekly email digest with stats
-
-### Phase 3 — Intelligence (2-3 months)
-- [ ] Claude-powered goal decomposition (break big goals into tasks)
-- [ ] Smart scheduling: suggest best focus time based on patterns
-- [ ] Social accountability: share streaks with friends
-- [ ] Screen time API integration (iOS Screen Time / Digital Wellbeing)
-- [ ] Mood tracking to correlate with productivity
-
-### Phase 4 — Platform (3-6 months)
-- [ ] React Native mobile app (iOS + Android)
-- [ ] Calendar integration (Google/Apple)
-- [ ] Spotify focus playlists integration
-- [ ] Community challenges (group habit streaks)
-- [ ] Parental controls / accountability partner mode
-- [ ] Wearable integration (Apple Watch quick logging)
+### Native module rebuild errors
+- Run `npm rebuild` or `npx electron-rebuild`
+- Check that your Node.js version matches the Electron version
 
 ---
 
 ## License
-MIT License — Free to use, modify and distribute.
 
-Built with ❤️ to help young people focus on what matters.
+MIT — Free to use, modify and distribute.

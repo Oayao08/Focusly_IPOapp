@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <!-- Background -->
+  <rect width="1024" height="1024" rx="220" fill="#080C12"/>
+  <rect x="56" y="56" width="912" height="912" rx="185" fill="#0D1520"/>
+  <!-- Outer glow ring -->
+  <rect x="56" y="56" width="912" height="912" rx="185"
+    fill="none" stroke="#14F0A0" stroke-width="6" opacity="0.15"/>
+  <!-- Vertical stem of F -->
+  <rect x="248" y="228" width="104" height="568" rx="22" fill="#14F0A0"/>
+  <!-- Top horizontal bar -->
+  <rect x="248" y="228" width="508" height="104" rx="22" fill="#14F0A0"/>
+  <!-- Middle horizontal bar -->
+  <rect x="248" y="454" width="380" height="94" rx="22" fill="#14F0A0"/>
+  <!-- Amber accent dot (gamification theme) -->
+  <circle cx="794" cy="776" r="54" fill="#FBBF24"/>
+  <circle cx="794" cy="776" r="36" fill="#F59E0B"/>
+</svg>

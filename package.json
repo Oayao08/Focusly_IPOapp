@@ -1,0 +1,31 @@
+{
+  "name": "flowvity",
+  "version": "1.0.0",
+  "description": "Focus. Flow. Grow. — Anti-procrastination desktop app",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron-forge start",
+    "build": "electron-forge make",
+    "package": "electron-forge package",
+    "create-icon": "node scripts/create-icon.js"
+  },
+  "keywords": ["productivity", "pomodoro", "habits"],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@electron-forge/cli": "^7.4.0",
+    "@electron-forge/maker-deb": "^7.4.0",
+    "@electron-forge/maker-rpm": "^7.4.0",
+    "@electron-forge/maker-squirrel": "^7.4.0",
+    "@electron-forge/maker-zip": "^7.4.0",
+    "@electron-forge/plugin-auto-unpack-natives": "^7.4.0"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "better-sqlite3": "^9.4.3",
+    "dotenv": "^16.4.5",
+    "electron": "^30.0.0",
+    "nodemailer": "^6.9.13",
+    "sharp": "^0.33.3"
+  }
+}
