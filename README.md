@@ -1,4 +1,4 @@
-# Flowvity — Focus. Flow. Grow.
+# Focusly — Focus. Flow. Grow.
 > Anti-procrastination productivity app for young people aged 17–24
 
 ---
